@@ -17,7 +17,7 @@ Example of trigger file contents (/etc/hosts.triggers above):
 /etc/init.d/dnsmasq restart >/tmp/dnsmask.restart.log 2>&1
 '
 
-# INSTALL: bash -n coin-miners-block; cp coin-miners-block /usr/local/bin
+# INSTALL: bash -n coin-miners-block && cp coin-miners-block /usr/local/bin
 
 ################################################################## Options
 
