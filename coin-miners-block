@@ -2,11 +2,12 @@
 USAGE='coin-miners-block [options]
 Bans sites in /etc/hosts, from an anti-coin-miner "Anti-WebMiner" blacklist 
 at https://github.com/greatis/Anti-WebMiner
-must be run as root in the crontab, with -y
+Must be run as root in the crontab, with -y
+Changes are logged in /var/log/coin-miners-block.log
 
 Options:
    -n       (default): do nothing, just prints what would be done
-   -y       modify the /et/hosts file, silent mode
+   -y       modify the /etc/hosts file, silent mode
    -e file  after a modification, execute the file. Can be repeated
 
 Example of crontab entry:
