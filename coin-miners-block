@@ -1,0 +1,98 @@
+#!/bin/bash
+USAGE='coin-miners-block [options]
+Bans sites in /etc/hosts, from an anti-coin-miner "Anti-WebMiner" blacklist 
+at https://github.com/greatis/Anti-WebMiner
+must be run as root in the crontab, with -y
+
+Options:
+   -n       (default): do nothing, just prints what would be done
+   -y       modify the /et/hosts file, silent mode
+   -e file  after a modification, execute the file. Can be repeated
+
+Example of crontab entry:
+00 06 * * * coin-miners-block -y -e /etc/hosts.triggers
+
+Example of trigger file contents (/etc/hosts.triggers above):
+/etc/init.d/dnsmasq restart >/tmp/dnsmask.restart.log 2>&1
+'
+
+# INSTALL: bash -n coin-miners-block; cp coin-miners-block /usr/local/bin
+
+################################################################## Options
+
+export bl_url=https://raw.githubusercontent.com/greatis/Anti-WebMiner/master/hosts
+export label='Anti-WebMiner blacklist'
+export logfile=/var/log/coin-miners-block.log
+
+export tmp=/tmp/coin-miners-block.$$
+cleanup() { rm -rf $tmp $tmp.*; }; trap cleanup 0
+
+triggers=
+doit=false
+err () { echo "***ERROR: $*" >&2; exit 1; }
+warn () { echo "###Warning: $*" >&2; }
+V () { :;}; T () { :;}; TV=false; E () { echo "$@";}; En () { echo -n "$@";}
+Vn () { :;}
+while test "_${1#-}" != "_$1" -a "_${1//-/}" != "_";do case "$1" in
+  -v) V () { echo "== $*" >&2;}; Vn () { echo -n "== $*" >&2;}; TV=true
+      T () { local i;En "==";for i in $*;do En " $i="`eval E '$'$i`;done;E;};;
+  -e) triggers="$triggers $2"; shift;;
+  -y) doit=true;;
+  -n) doit=false;;
+  *) echo "$USAGE"; exit 1;
+esac;shift; done; if test "_$1" = "_--";then shift; fi
+
+################################################################## Utils
+# quote the arg string for regexp use, if many, prints them one per line
+# $1=string, prints quoted form for inclusion in regexpes in stdout
+# quotes also / for safe use in sed /.../
+_regexp_quote () {
+  local re="$1" len=${#1} i=0 c
+  while let 'i<len'; do
+    c="${re:i:1}"
+    case "$c" in
+      \?|\*|\||+|.|\$|\\|\[|\]|\(|\)|/) echo -n "[$c]";;
+      '^') echo -n "\\^";;
+      *) echo -n "$c";;
+    esac
+    let i++
+  done
+}
+
+################################################################## Code
+wget -q -O $tmp.bl.in "$bl_url" || err "blacklist wget fail at $bl_url"
+[ -s $tmp.bl.in ] || err "blacklist empty"
+# files not ending with a newline: a newline is added
+if ! cmp -s "$tmp.bl.in" < <(sed -e '$a\' "$tmp.bl.in"); then
+    sed -i -e '$a\' "$tmp.bl.in"
+fi
+
+beginmark="###################### BEGIN $label"
+endmark="###################### END $label"
+
+echo "$beginmark" >$tmp.bl.new
+cat $tmp.bl.in >>$tmp.bl.new
+echo "$endmark"  >>$tmp.bl.new
+
+bmq=$(_regexp_quote "$beginmark")
+emq=$(_regexp_quote "$endmark")
+sed -n -e "/^$bmq/,/^$emq/p" /etc/hosts >$tmp.bl.old
+
+if cmp -s $tmp.bl.new $tmp.bl.old; then
+    $doit || echo "Blacklist unchanged, nothing to be done"
+    exit 0
+else
+    if $doit; then
+	sed -e "/^$bmq/,/^$emq/d" /etc/hosts >$tmp.host
+	cat $tmp.bl.new >>$tmp.host
+	mv /etc/hosts /etc/hosts.back
+	mv $tmp.host /etc/hosts
+	for trigger in $triggers; do 
+	    $trigger || echo "***Errors while running trigger $trigger"
+	done
+	echo "$(date +%F.%T) Anti-WebMiner blacklist upated: $(grep 'Anti-WebMiner Start' $tmp.bl.in)" >>$logfile
+    else
+	echo "Blacklist changed, /etc/hosts should be updated:"
+	diff $tmp.bl.old $tmp.bl.new | grep '^[<>]'
+    fi
+fi
