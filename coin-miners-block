@@ -91,7 +91,7 @@ else
 	for trigger in $triggers; do 
 	    $trigger || echo "***Errors while running trigger $trigger"
 	done
-	echo "$(date +%F.%T) Anti-WebMiner blacklist upated: $(grep 'Anti-WebMiner Start' $tmp.bl.in)" >>$logfile
+	echo "$(date +%F.%T) Anti-WebMiner blacklist updated: $(grep 'Anti-WebMiner Start' $tmp.bl.in)" >>$logfile
     else
 	echo "Blacklist changed, /etc/hosts should be updated:"
 	diff $tmp.bl.old $tmp.bl.new | grep '^[<>]'
