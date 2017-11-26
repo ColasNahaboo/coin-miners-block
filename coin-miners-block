@@ -15,6 +15,8 @@ Example of crontab entry:
 
 Example of trigger file contents (/etc/hosts.triggers above):
 /etc/init.d/dnsmasq restart >/tmp/dnsmask.restart.log 2>&1
+
+(C) 2017 Colas Nahaboo http://colas.nahaboo.net, MIT license
 '
 
 # INSTALL: bash -n coin-miners-block && cp coin-miners-block /usr/local/bin
