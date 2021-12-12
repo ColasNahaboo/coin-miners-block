@@ -10,7 +10,7 @@ Changes performed to `/etc/hosts` are logged in `/var/log/coin-miners-block.log`
 Options:
 -   `-n`       (default): do nothing, just prints what would be done
 -   `-y`       modify the /etc/hosts file, silent mode
-    -   `-e file`  after a modification, execute the file. Can be repeated
+-   `-e file`  after a modification, execute the file. Can be repeated
 
 ## Examples of use
 
